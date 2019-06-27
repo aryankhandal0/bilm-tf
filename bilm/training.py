@@ -674,7 +674,10 @@ def _get_feed_dict_from_X(X, start, end, model, char_inputs, bidirectional):
 
 def train(options, data, n_gpus, tf_save_dir, tf_log_dir,
           restart_ckpt_file=None):
-
+    # training log file
+    train_batch_path = os.path.join(tf_save_dir, 'train_batch_perplex.txt')
+        with open(train_batch_path,'a+') as train_log:
+            train_log.write('Training Log:\n')
     # not restarting so save the options
     if restart_ckpt_file is None:
         with open(os.path.join(tf_save_dir, 'options.json'), 'w') as fout:
@@ -788,8 +791,8 @@ def train(options, data, n_gpus, tf_save_dir, tf_log_dir,
         n_tokens_per_batch = batch_size * unroll_steps * n_gpus
         n_batches_per_epoch = int(n_train_tokens / n_tokens_per_batch)
         n_batches_total = options['n_epochs'] * n_batches_per_epoch
-        print("Training for %s epochs and %s batches" % (
-            options['n_epochs'], n_batches_total))
+        print("Training for %s epochs and %s batches and %s unroll_steps and %s n_train_tokens and %s n_tokens_per_batch and %s n_batches_per_epoch " % (
+            options['n_epochs'], n_batches_total, unroll_steps,n_train_tokens,n_tokens_per_batch,n_batches_per_epoch))
 
         # get the initial lstm states
         init_state_tensors = []
@@ -854,7 +857,7 @@ def train(options, data, n_gpus, tf_save_dir, tf_log_dir,
             # This runs the train_op, summaries and the "final_state_tensors"
             #   which just returns the tensors, passing in the initial
             #   state tensors, token ids and next token ids
-            if batch_no % 1250 != 0:
+            if batch_no % 10000 != 0:
                 ret = sess.run(
                     [train_op, summary_op, train_perplexity] +
                                                 final_state_tensors,
@@ -878,15 +881,17 @@ def train(options, data, n_gpus, tf_save_dir, tf_log_dir,
                 init_state_values = ret[4:]
                 
 
-            if batch_no % 1250 == 0:
+            if batch_no % 10000 == 0:
                 summary_writer.add_summary(ret[3], batch_no)
             if batch_no % 100 == 0:
                 # write the summaries to tensorboard and display perplexity
                 summary_writer.add_summary(ret[1], batch_no)
                 print("Batch %s, train_perplexity=%s" % (batch_no, ret[2]))
                 print("Total time: %s" % (time.time() - t1))
+                with open(train_batch_path, 'a+') as train_log:
+                    train_log.write("Batch %s, train_perplexity=%s Total time: %s \n" % (batch_no, ret[2],time.time() - t1))
 
-            if (batch_no % 1250 == 0) or (batch_no == n_batches_total):
+            if (batch_no % 10000 == 0) or (batch_no == n_batches_total):
                 # save the model
                 checkpoint_path = os.path.join(tf_save_dir, 'model.ckpt')
                 saver.save(sess, checkpoint_path, global_step=global_step)
@@ -956,7 +961,9 @@ def test(options, ckpt_file, data, batch_size=256):
     '''
     Get the test set perplexity!
     '''
-
+    test_batch_path = 'test_log.txt'
+    with open(test_batch_path,'a+') as test_log:
+        test_log.write('Testing Log:\n')
     bidirectional = options.get('bidirectional', False)
     char_inputs = 'char_cnn' in options
     if char_inputs:
@@ -1037,9 +1044,14 @@ def test(options, ckpt_file, data, batch_size=256):
 
             print("batch=%s, batch_perplexity=%s, avg_perplexity=%s, time=%s" %
                 (batch_no, batch_perplexity, avg_perplexity, time.time() - t1))
+            with open(test_batch_path, 'a+') as test_log:
+                        test_log.write("batch=%s, batch_perplexity=%s, avg_perplexity=%s, time=%s \n" %
+                    (batch_no, batch_perplexity, avg_perplexity, time.time() - t1))
 
     avg_loss = np.mean(batch_losses)
     print("FINSIHED!  AVERAGE PERPLEXITY = %s" % np.exp(avg_loss))
+    with open(test_batch_path, 'a+') as test_log:
+                    test_log.write("FINSIHED!  AVERAGE PERPLEXITY = %s \n" % np.exp(avg_loss))
 
     return np.exp(avg_loss)
 
