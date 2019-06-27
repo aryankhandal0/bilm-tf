@@ -1042,9 +1042,10 @@ def test(options, ckpt_file, data, batch_size=256):
             total_loss += loss
             avg_perplexity = np.exp(total_loss / batch_no)
 
-            print("batch=%s, batch_perplexity=%s, avg_perplexity=%s, time=%s" %
-                (batch_no, batch_perplexity, avg_perplexity, time.time() - t1))
-            with open(test_batch_path, 'a+') as test_log:
+            if batch_no%25==0:
+                print("batch=%s, batch_perplexity=%s, avg_perplexity=%s, time=%s" %
+                    (batch_no, batch_perplexity, avg_perplexity, time.time() - t1))
+                with open(test_batch_path, 'a+') as test_log:
                         test_log.write("batch=%s, batch_perplexity=%s, avg_perplexity=%s, time=%s \n" %
                     (batch_no, batch_perplexity, avg_perplexity, time.time() - t1))
 
