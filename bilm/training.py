@@ -676,8 +676,8 @@ def train(options, data, n_gpus, tf_save_dir, tf_log_dir,
           restart_ckpt_file=None):
     # training log file
     train_batch_path = os.path.join(tf_save_dir, 'train_batch_perplex.txt')
-        with open(train_batch_path,'a+') as train_log:
-            train_log.write('Training Log:\n')
+    with open(train_batch_path,'a+') as train_log:
+        train_log.write('Training Log:\n')
     # not restarting so save the options
     if restart_ckpt_file is None:
         with open(os.path.join(tf_save_dir, 'options.json'), 'w') as fout:
